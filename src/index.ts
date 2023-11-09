@@ -7,7 +7,10 @@ import { maintenanceModeMiddleware } from './_core/middlewares/maintenance-mode.
 
 import authRoute from './routes/auth.route';
 import userRoute from './routes/user.route';
+import csvRoute from './routes/csv.route';
+
 import { requestLoggerMiddleware } from './_core/middlewares/request-logger.middleware';
+import { multerUploadCsv } from './_core/utils/uploader/multer.config';
 
 const app: Application = express();
 
@@ -20,6 +23,8 @@ async function runApp() {
       exposedHeaders: ['X-Nodex-DateTime'],
     }),
   ); // Enable CORS for all routes
+
+  app.use(multerUploadCsv.single("csv"));
   app.use(express.json());
 
   // Routes
@@ -28,6 +33,7 @@ async function runApp() {
 
   app.use('/api', authRoute);
   app.use('/api', userRoute);
+  app.use('/api', csvRoute);
 
   // Connect to MongoDB
   connectDB();

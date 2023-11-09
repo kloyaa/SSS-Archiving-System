@@ -47,11 +47,9 @@ export const createProfile = async (req: Request & { user: IAuthValue }, res: Re
 export const getProfileByAccessToken = async (req: Request & { user: IAuthValue }, res: Response) => {
   try {
     const user = req.user.value.id;
-    const result = await Profile
-      .findOne({ user })
-      .exec();
+    const result = await Profile.findOne({ user }).exec();
 
-    if(!result) {
+    if (!result) {
       return res.status(404).json(statuses['02']);
     }
 
@@ -60,4 +58,4 @@ export const getProfileByAccessToken = async (req: Request & { user: IAuthValue 
     console.log('@getProfileByAccessToken error', error);
     return res.status(401).json(statuses['0900']);
   }
-}
+};
