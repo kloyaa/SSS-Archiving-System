@@ -1306,9 +1306,10 @@ export const generatePdf = async (req: Request, res: Response) => {
         let startX: number;
 
         // Calculate the fixed width for each column
-        const columnWidth = 100;
+        const firstColumnWidth = 180;
+        const otherColumnsWidth = 80;
         const tableHeaders = ['Employee', 'SS Number', 'SS', 'EC', 'Total'];
-        const tableWidth = tableHeaders.length * 100;
+        const tableWidth = firstColumnWidth + (tableHeaders.length - 1) * otherColumnsWidth;
 
         // Iterate through employee data and create a table
         for (let i = 0; i < employeeData.length; i += rowsPerPage) {
@@ -1319,15 +1320,17 @@ export const generatePdf = async (req: Request, res: Response) => {
                 let currentY = padding.top;
 
                 // Adjust the startX for the first column based on the fixed width
-                startX = (doc.page.width - tableHeaders.length * columnWidth) / 2;
+                startX = (doc.page.width - tableWidth) / 2;
 
                 // Draw table headers with black background, white text, and 0.5px borders
-                doc.rect(startX, currentY, tableHeaders.length * columnWidth, 20).fillAndStroke('#EA0976', 'white');
+                doc.rect(startX, currentY, tableWidth, 20).fillAndStroke('#EA0976', 'white');
                 tableHeaders.forEach((header, index) => {
-                    doc.fillColor('white').fontSize(10).text(header, startX + index * columnWidth, currentY + 5, {
+                    const columnWidth = index === 0 ? firstColumnWidth : otherColumnsWidth;
+                    doc.fillColor('white').fontSize(10).text(header, startX+5, currentY + 5, {
                         width: columnWidth,
-                        align: 'center',
+                        align: 'left',
                     });
+                    startX += columnWidth;
                 });
 
                 // Move to the next row
@@ -1339,14 +1342,18 @@ export const generatePdf = async (req: Request, res: Response) => {
 
             doc.font('Helvetica').fontSize(8);
             currentData.forEach((employee, rowIndex) => {
+                startX = (doc.page.width - tableWidth) / 2; // Reset startX for each row
+
                 Object.entries(employee).forEach(([key, value], index) => {
-                    if(rowIndex != 0) {
-                        doc.rect(startX, currentY, tableWidth , 0.1).fill("#aaa")
-                    }
-                    doc.fillColor('black').text(value, startX + index * columnWidth, currentY + 5, {
+                    const columnWidth = index === 0 ? firstColumnWidth : otherColumnsWidth;
+                    // if (rowIndex !== 0) {
+                    //     doc.rect(startX, currentY, tableWidth, 0.01).fill('#aaa');
+                    // }
+                    doc.fillColor('black').text(value, startX+5, currentY + 5, {
                         width: columnWidth,
-                        align: 'center',
+                        align: 'left',
                     });
+                    startX += columnWidth;
                 });
 
                 // Move to the next row
