@@ -61,10 +61,18 @@ export const generatePdf = async (req: Request, res: Response) => {
         let startX: number;
         let currentY: number = 0;
         // Calculate the fixed width for each column
-        const firstColumnWidth = 180;
-        const otherColumnsWidth = 80;
-        const tableHeaders = ['Employee', 'SS Number', 'SS', 'EC', 'Total'];
+        const firstColumnWidth = 150;
+        const otherColumnsWidth = 60;
+        const tableHeaders = ['Employee', 'SBR Date', 'SBR No.', 'SS No.', 'SS', 'EC', 'Total'];
         const tableWidth = firstColumnWidth + (tableHeaders.length - 1) * otherColumnsWidth;
+
+        doc.fillColor('black').fontSize(24).text("SSS Archiving System", {
+            align: 'center',
+        });
+
+        doc.fillColor('black').fontSize(10).text(`Date Generated ${new Date().toISOString().substring(0, 10)}`, {
+            align: 'center',
+        });
 
         // Iterate through employee data and create a table
         for (let i = 0; i < array.length; i += rowsPerPage) {
@@ -100,13 +108,11 @@ export const generatePdf = async (req: Request, res: Response) => {
                 startX = (doc.page.width - tableWidth) / 2; // Reset startX for each row
 
                 Object.entries(employee).forEach(([key, value], index) => {
+                    console.log(index)
                     const columnWidth = index === 0 ? firstColumnWidth : otherColumnsWidth;
-                    // if (rowIndex !== 0) {
-                    //     doc.rect(startX, currentY, tableWidth, 0.01).fill('#aaa');
-                    // }
                     doc.fillColor('black').text(value as any, startX + 5, currentY + 5, {
                         width: columnWidth,
-                        align: 'left',
+                        align: "left",
                     });
                     startX += columnWidth;
                 });
@@ -131,17 +137,17 @@ export const generatePdf = async (req: Request, res: Response) => {
         }
 
         const totalStartX = (doc.page.width - tableWidth) / 2;
+        doc.rect(totalStartX, totalRowY + 5, tableWidth, 0.1).fillAndStroke("#EA0976")
 
         // doc.rect(totalStartX, totalRowY, tableWidth, 30).fillAndStroke('#EA0976', 'white');
         const totalColumnWidth = otherColumnsWidth * (tableHeaders.length - 1); // Exclude the first column
         const total = array.reduce((acc, employee) => acc + (parseFloat(employee['Total Contributions'].replace(',', '')) || 0), 0);
 
-        doc.fillColor('black').fontSize(12).text("Total Contributions", totalStartX + totalColumnWidth - 40, totalRowY + 5, {
-            width: firstColumnWidth,
+        doc.fillColor('#777').fontSize(10).text("Total Contributions", totalStartX + totalColumnWidth - 40, totalRowY + 25, {
             align: 'right',
         });
-        doc.fillColor('black').fontSize(24).text(`PHP ${total.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`, totalStartX + totalColumnWidth - 40, totalRowY + 25, {
-            width: firstColumnWidth,
+
+        doc.fillColor('black').fontSize(16).text(`PHP ${total.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`, totalStartX + totalColumnWidth, totalRowY + 40, {
             align: 'right',
         });
 
