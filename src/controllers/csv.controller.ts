@@ -4,6 +4,7 @@ import PDFDocument from 'pdfkit';
 import { validateGeneratePdfBody } from '../_core/validators/csv.validator';
 import { statuses } from '../_core/const/api.statuses';
 import { IEmployeeData } from '../_core/interfaces/csv.interface';
+import { formatter } from '../_core/utils/common/formatter.util';
 
 export const uploadCsv = async (req: Request, res: Response) => {
     try {
@@ -20,16 +21,16 @@ export const generatePdf = async (req: Request, res: Response) => {
     try {
         const error = validateGeneratePdfBody(req.body);
         if (error) {
-          return res.status(400).json({
-            ...statuses['501'],
-            error: error.details[0].message.replace(/['"]/g, ''),
-          });
+            return res.status(400).json({
+                ...statuses['501'],
+                error: error.details[0].message.replace(/['"]/g, ''),
+            });
         }
 
         const array: any[] = req.body?.array;
 
-        if(!req.body?.array.length) {
-            return res.status(400).json({ message: "PDF Generation requires value. "})
+        if (!req.body?.array.length) {
+            return res.status(400).json({ message: "PDF Generation requires value. " })
         }
 
         // Create a new PDF document
@@ -58,7 +59,7 @@ export const generatePdf = async (req: Request, res: Response) => {
 
         // Declare startX outside the loop
         let startX: number;
-
+        let currentY: number = 0;
         // Calculate the fixed width for each column
         const firstColumnWidth = 180;
         const otherColumnsWidth = 80;
@@ -71,7 +72,7 @@ export const generatePdf = async (req: Request, res: Response) => {
 
             // Draw table headers only on the first page
             if (!headerDrawn) {
-                let currentY = padding.top;
+                currentY = padding.top;
 
                 // Adjust the startX for the first column based on the fixed width
                 startX = (doc.page.width - tableWidth) / 2;
@@ -92,7 +93,7 @@ export const generatePdf = async (req: Request, res: Response) => {
                 headerDrawn = true;
             }
             // Draw a row for each employee
-            let currentY = padding.top + 20; // Move down to start drawing below the header
+            currentY = padding.top + 20; // Move down to start drawing below the header
 
             doc.font('Helvetica').fontSize(8);
             currentData.forEach((employee, rowIndex) => {
@@ -119,6 +120,30 @@ export const generatePdf = async (req: Request, res: Response) => {
                 doc.addPage();
             }
         }
+
+        let totalRowY = currentY + 20; // Add 20px margin after the last row
+
+        // Check if there's space for another row (20px margin)
+        if (totalRowY + 20 > doc.page.height - padding.top) {
+            // Add a new page with 20px margin
+            doc.addPage();
+            totalRowY = padding.top + 20; // Reset totalRowY after adding a new page
+        }
+
+        const totalStartX = (doc.page.width - tableWidth) / 2;
+
+        // doc.rect(totalStartX, totalRowY, tableWidth, 30).fillAndStroke('#EA0976', 'white');
+        const totalColumnWidth = otherColumnsWidth * (tableHeaders.length - 1); // Exclude the first column
+        const total = array.reduce((acc, employee) => acc + (parseFloat(employee['Total Contributions'].replace(',', '')) || 0), 0);
+
+        doc.fillColor('black').fontSize(12).text("Total Contributions", totalStartX + totalColumnWidth - 40, totalRowY + 5, {
+            width: firstColumnWidth,
+            align: 'right',
+        });
+        doc.fillColor('black').fontSize(24).text(`PHP ${total.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`, totalStartX + totalColumnWidth - 40, totalRowY + 25, {
+            width: firstColumnWidth,
+            align: 'right',
+        });
 
         // Finalize the PDF
         doc.end();
